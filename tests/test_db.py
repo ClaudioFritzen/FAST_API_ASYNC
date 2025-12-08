@@ -25,4 +25,5 @@ def test_create_user_adiciona_usuario_ao_database(session, mock_db_time):
         'email': 'johndoe@example.com',
         'password': 'securepassword',
         'created_at': time,
+        'updated_at': time,
     }
