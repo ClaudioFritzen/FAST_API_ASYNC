@@ -8,7 +8,7 @@ class Message(BaseModel):
 class UserSchema(BaseModel):
     username: str
     email: EmailStr
-    senha: str
+    password: str
 
 
 class UserPublicSchema(BaseModel):
@@ -16,9 +16,9 @@ class UserPublicSchema(BaseModel):
     email: EmailStr
     id: int
 
-
-class UserDB(UserSchema):
-    id: int
+    model_config = {
+        'from_attributes': True,
+    }
 
 
 class UserList(BaseModel):

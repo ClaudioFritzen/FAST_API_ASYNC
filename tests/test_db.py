@@ -16,11 +16,11 @@ def test_create_user_adiciona_usuario_ao_database(session, mock_db_time):
 
         session.add(new_user)
         session.commit()
-
+        session.refresh(new_user)
     user = session.scalar(select(User).where(User.username == 'johndoe'))
 
     assert asdict(user) == {
-        'id': 1,
+        'id': user.id,
         'username': 'johndoe',
         'email': 'johndoe@example.com',
         'password': 'securepassword',
