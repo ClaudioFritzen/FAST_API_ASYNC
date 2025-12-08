@@ -128,3 +128,20 @@ def delete_user(user_id: int, session: Session = Depends(get_session)):
 
     session.delete(user_db)
     session.commit()
+
+
+@app.get(
+    '/users/{user_id}',
+    status_code=HTTPStatus.OK,
+    response_model=UserPublicSchema,
+)
+def read_user_by_id(user_id: int, session: Session = Depends(get_session)):
+
+    user_db = session.scalar(select(User).where(User.id == user_id))
+
+    if not user_db:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail='User not found'
+        )
+
+    return user_db
