@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class Message(BaseModel):
@@ -28,3 +28,12 @@ class UserList(BaseModel):
 class TokenSchema(BaseModel):
     access_token: str
     token_type: str
+
+
+class FilterPage(BaseModel):
+    skip: int = Field(ge=0, default=0)
+    limit: int = Field(ge=1, default=10)
+
+
+class FilterName(FilterPage):
+    name: str = Field(default='')

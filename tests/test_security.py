@@ -2,16 +2,16 @@ from http import HTTPStatus
 
 from jwt import decode
 
-from fast_zero_async.security import ALGORITHM, SECRET_KEY, create_access_token
+from fast_zero_async.security import create_access_token
 
 
-def test_jwt():
+def test_jwt(setting):
 
     data = {'test': 'test'}
 
     token = create_access_token(data)
 
-    decoded = decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    decoded = decode(token, setting.SECRET_KEY, algorithms=[setting.ALGORITHM])
 
     assert decoded['test'] == data['test']
 
