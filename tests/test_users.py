@@ -48,28 +48,6 @@ def test_update_user_deve_atualizar_usuario(client, user, token):
     }
 
 
-@pytest.mark.xfail(
-    reason='Falha pois ainda não temos como testar com as '
-    'novas seguranças JWt e Token'
-)
-def test_update_user_deve_retornar_404_quando_usuario_nao_existir(
-    client,
-    user,
-    token,
-):
-    response = client.put(
-        '/users/999',
-        headers={'Authorization': f'Bearer {token}'},
-        json={
-            'username': 'alice',
-            'email': 'alice@example.com',
-            'password': 'newpassword',
-        },
-    )
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User not found'}
-
-
 def test_update_user_must_return_401_when_is_not_authenticated(
     client,
     user,

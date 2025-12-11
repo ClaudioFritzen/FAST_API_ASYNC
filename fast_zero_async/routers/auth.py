@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fast_zero_async.database import get_session
 from fast_zero_async.models import User
@@ -16,17 +16,19 @@ from fast_zero_async.security import (
 
 router = APIRouter(tags=['Auth Router'], prefix='/auth')
 
-Session = Annotated[Session, Depends(get_session)]
+Session = Annotated[AsyncSession, Depends(get_session)]
 OAuth2Form = Annotated[OAuth2PasswordRequestForm, Depends()]
 
 
 @router.post('/token', response_model=TokenSchema, status_code=HTTPStatus.OK)
-def get_token(
+async def get_token(
     form_data: OAuth2Form,
     session: Session,
 ):
 
-    user = session.scalar(select(User).where(User.email == form_data.username))
+    user = await session.scalar(
+        select(User).where(User.email == form_data.username)
+    )
 
     if not user:
         raise HTTPException(
