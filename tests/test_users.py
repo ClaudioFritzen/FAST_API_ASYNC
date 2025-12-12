@@ -34,7 +34,7 @@ def test_update_user_deve_atualizar_usuario(client, user, token):
         f'/users/{user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json={
-            'username': 'bob',
+            'username': user.username,
             'email': 'bob@example.com',
             'password': 'newpassword',
         },
@@ -42,7 +42,7 @@ def test_update_user_deve_atualizar_usuario(client, user, token):
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
-        'username': 'bob',
+        'username': user.username,
         'email': 'bob@example.com',
         'id': user.id,
     }
@@ -65,12 +65,10 @@ def test_update_user_must_return_401_when_is_not_authenticated(
 
 
 def test_update_user_must_return_403_when_try_update_another_user(
-    client,
-    user,
-    token,
+    client, user, token
 ):
     response = client.put(
-        '/users/999',
+        f'/users/{user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'alice',

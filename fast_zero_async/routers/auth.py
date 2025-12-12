@@ -11,6 +11,7 @@ from fast_zero_async.models import User
 from fast_zero_async.schemas import TokenSchema
 from fast_zero_async.security import (
     create_access_token,
+    get_current_user,
     verify_password,
 )
 
@@ -18,6 +19,7 @@ router = APIRouter(tags=['Auth Router'], prefix='/auth')
 
 Session = Annotated[AsyncSession, Depends(get_session)]
 OAuth2Form = Annotated[OAuth2PasswordRequestForm, Depends()]
+CurrentUser = Annotated[AsyncSession, Depends(get_current_user)]
 
 
 @router.post('/token', response_model=TokenSchema, status_code=HTTPStatus.OK)
@@ -43,3 +45,12 @@ async def get_token(
         )
     ascess_token = create_access_token(data={'sub': user.email})
     return {'access_token': ascess_token, 'token_type': 'bearer'}
+
+
+@router.post('/refresh_token', response_model=TokenSchema)
+async def refresh_access_token(
+    user: CurrentUser,
+):
+    new_access_token = create_access_token(data={'sub': user.email})
+
+    return {'access_token': new_access_token, 'token_type': 'bearer'}
