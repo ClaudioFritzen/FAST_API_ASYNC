@@ -92,10 +92,11 @@ def test_delete_user_deve_deletar_usuario(client, user, token):
 
 
 def test_delete_user_must_return_403_when_try_delete_another_user(
-    client, user, token
+    client, another_user, token
 ):
     response = client.delete(
-        '/users/999', headers={'Authorization': f'Bearer {token}'}
+        f'/users/{another_user.id}',
+        headers={'Authorization': f'Bearer {token}'},
     )
     assert response.status_code == HTTPStatus.FORBIDDEN
     assert response.json() == {
@@ -137,7 +138,7 @@ def test_create_user_integrity_error_name(client, user):
     response = client.post(
         '/users/',
         json={
-            'username': 'Teste',
+            'username': user.username,
             'email': 'teste2@example.com',
             'password': 'secret',
         },
@@ -151,7 +152,7 @@ def test_create_user_integrity_error_email(client, user):
         '/users/',
         json={
             'username': 'Email 2',
-            'email': 'teste@test.com',
+            'email': user.email,
             'password': 'secret',
         },
     )
