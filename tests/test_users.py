@@ -65,13 +65,13 @@ def test_update_user_must_return_401_when_is_not_authenticated(
 
 
 def test_update_user_must_return_403_when_try_update_another_user(
-    client, user, token
+    client, user, token, another_user
 ):
     response = client.put(
-        f'/users/{user.id}',
+        f'/users/{another_user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json={
-            'username': 'alice',
+            'username': user.username,
             'email': 'alice@example.com',
             'password': 'newpassword',
         },
