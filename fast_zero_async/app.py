@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse
 
 from fast_zero_async.routers import (
     auth,
+    todos,
     users,
 )
 from fast_zero_async.schemas import (
@@ -15,6 +16,7 @@ app = FastAPI(title='Fast Zero Async', version='0.1.0')
 
 app.include_router(auth.router)
 app.include_router(users.router)
+app.include_router(todos.router)
 
 
 # fastzero/app.py

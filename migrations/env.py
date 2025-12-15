@@ -56,8 +56,19 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
+""" def do_run_migrations(connection):
+    context.configure(connection=connection, target_metadata=target_metadata) """
+
 def do_run_migrations(connection):
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        compare_type=True,            # detecta mudanças de tipo
+        compare_server_default=True,  # detecta mudanças em defaults
+        render_as_batch=True          # essencial para SQLite
+    )
+    with context.begin_transaction():
+        context.run_migrations()
 async def run_async_migrations():
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section),
@@ -71,6 +82,27 @@ async def run_async_migrations():
 
 def run_migrations_online() -> None:
     asyncio.run(run_async_migrations())
+
+def run_migrations_offline() -> None:
+    """Executa migrações em 'offline' mode.
+
+    Neste modo, o Alembic gera apenas o SQL como texto,
+    sem precisar abrir conexão com o banco.
+    """
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+        compare_type=True,            # detecta mudanças de tipo
+        compare_server_default=True,  # detecta mudanças em defaults
+        render_as_batch=True          # essencial para SQLite
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
     
 
 if context.is_offline_mode():
