@@ -31,5 +31,5 @@ async def test_create_user_adiciona_usuario_ao_database(
         'password': 'securepassword',
         'created_at': time,
         'updated_at': time,
-        'todos': []
+        'todos': [],
     }
