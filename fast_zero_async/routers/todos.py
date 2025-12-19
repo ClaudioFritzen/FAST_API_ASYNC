@@ -13,6 +13,7 @@ from fast_zero_async.schemas import (
     TodoList,
     TodoPublic,
     TodoSchema,
+    TodoUpdate,
 )
 from fast_zero_async.security import get_current_user
 
@@ -82,3 +83,26 @@ async def delete_todo(todo_id: int, session: Session, user: CurrentUser):
     await session.delete(todo)
 
     return {'message': 'Task has been deleted successfully.'}
+
+
+@router.patch('/{todo_id}', response_model=TodoPublic)
+async def patch_todo(
+    todo_id: int, session: Session, user: CurrentUser, todo: TodoUpdate
+):
+    db_todo = await session.scalar(
+        select(Todo).where(Todo.user_id == user.id, Todo.id == todo_id)
+    )
+
+    if not db_todo:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail='Task not found.'
+        )
+
+    for key, value in todo.model_dump(exclude_unset=True).items():
+        setattr(db_todo, key, value)
+
+    session.add(db_todo)
+    await session.commit()
+    await session.refresh(db_todo)
+
+    return db_todo
