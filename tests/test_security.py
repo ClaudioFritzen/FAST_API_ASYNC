@@ -18,8 +18,8 @@ def test_jwt(setting):
     assert 'exp' in decoded
 
 
-def test_jwt_invalid_token_raises_exception(client, user):
-    response = client.delete(
+async def test_jwt_invalid_token_raises_exception(client, user):
+    response = await client.delete(
         f'users/{user.id}', headers={'Authorization': 'Bearer token_invalido'}
     )
 
@@ -27,9 +27,9 @@ def test_jwt_invalid_token_raises_exception(client, user):
     assert response.json() == {'detail': 'Could not validate credentials'}
 
 
-def test_jwt_email_not_found_raises_exception(client, user):
+async def test_jwt_email_not_found_raises_exception(client, user):
     invalid_token = create_access_token(data={'sub': 'coisa@gmail.com'})
-    response = client.delete(
+    response = await client.delete(
         f'users/{user.id}',
         headers={'Authorization': f'Bearer {invalid_token}'},
     )
@@ -38,9 +38,9 @@ def test_jwt_email_not_found_raises_exception(client, user):
     assert response.json() == {'detail': 'Could not validate credentials'}
 
 
-def test_jwt_without_email_raises_exception(client, user):
+async def test_jwt_without_email_raises_exception(client, user):
     invalid_token = create_access_token(data={'nao_sub': ''})
-    response = client.delete(
+    response = await client.delete(
         f'users/{user.id}',
         headers={'Authorization': f'Bearer {invalid_token}'},
     )

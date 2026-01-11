@@ -6,6 +6,8 @@ import pytest
 from sqlalchemy import select
 
 from fast_zero_async.models import Todo, TodoState, User
+## import do erro de enum
+from sqlalchemy.exc import DBAPIError
 
 
 class TodoFactory(factory.Factory):
@@ -18,10 +20,10 @@ class TodoFactory(factory.Factory):
     user_id = 1
 
 
-def test_create_todo(client, token, mock_db_time):
+async def test_create_todo(client, token, mock_db_time):
 
     with mock_db_time(model=Todo) as time:
-        response = client.post(
+        response = await client.post(
             '/todos/',
             headers={'Authorization': f'Bearer {token}'},
             json={
@@ -40,7 +42,7 @@ def test_create_todo(client, token, mock_db_time):
     }
 
 
-@pytest.mark.asyncio
+
 async def test_list_todos_should_return_5_todos(session, client, user, token):
     # arrenge
     expected_todos = 5
@@ -48,7 +50,7 @@ async def test_list_todos_should_return_5_todos(session, client, user, token):
     await session.commit()
 
     # act
-    response = client.get(
+    response = await client.get(
         '/todos/',  # sem query
         headers={'Authorization': f'Bearer {token}'},
     )
@@ -64,7 +66,7 @@ async def test_list_todos_pagination_should_return_2_todos(
     session.add_all(TodoFactory.create_batch(5, user_id=user.id))
     await session.commit()
 
-    response = client.get(
+    response = await client.get(
         '/todos/?offset=1&limit=2',
         headers={'Authorization': f'Bearer {token}'},
     )
@@ -82,7 +84,7 @@ async def test_list_todos_filter_title_should_return_5_todos(
     )
     await session.commit()
 
-    response = client.get(
+    response = await client.get(
         '/todos/?title=Test todo 1',
         headers={'Authorization': f'Bearer {token}'},
     )
@@ -100,7 +102,7 @@ async def test_list_todos_filter_description_should_return_5_todos(
     )
     await session.commit()
 
-    response = client.get(
+    response = await client.get(
         '/todos/?description=desc',
         headers={'Authorization': f'Bearer {token}'},
     )
@@ -118,7 +120,7 @@ async def test_list_todos_filter_state_should_return_5_todos(
     )
     await session.commit()
 
-    response = client.get(
+    response = await client.get(
         '/todos/?state=draft',
         headers={'Authorization': f'Bearer {token}'},
     )
@@ -132,7 +134,7 @@ async def test_delete_todo(session, client, user, token):
     session.add(todo)
     await session.commit()
 
-    response = client.delete(
+    response = await client.delete(
         f'/todos/{todo.id}', headers={'Authorization': f'Bearer {token}'}
     )
 
@@ -144,7 +146,7 @@ async def test_delete_todo(session, client, user, token):
 
 @pytest.mark.asyncio
 async def test_delete_task_not_existing(session, client, user, token):
-    response = client.delete(
+    response = await client.delete(
         '/todos/10', headers={'Authorization': f'Bearer {token}'}
     )
 
@@ -160,7 +162,7 @@ async def test_delete_task_another_user(session, client, token, another_user):
     session.add(todo_another_user)
     await session.commit()
     # act
-    response = client.delete(
+    response = await client.delete(
         f'/todos/{todo_another_user.id}',
         headers={'Authorization': f'Bearer {token}'},
     )
@@ -176,7 +178,7 @@ async def test_patch_todo(session, client, user, token):
     session.add(todo)
     await session.commit()
 
-    response = client.patch(
+    response = await client.patch(
         f'/todos/{todo.id}',
         json={'title': 'teste!'},
         headers={'Authorization': f'Bearer {token}'},
@@ -185,8 +187,8 @@ async def test_patch_todo(session, client, user, token):
     assert response.json()['title'] == 'teste!'
 
 
-def test_patch_todo_error(client, token):
-    response = client.patch(
+async def test_patch_todo_error(client, token):
+    response = await client.patch(
         '/todos/10',
         json={},
         headers={'Authorization': f'Bearer {token}'},
@@ -205,7 +207,8 @@ async def test_list_todos_should_return_all_expected_fields__exercicio(
         await session.commit()
 
     await session.refresh(todo)
-    response = client.get(
+
+    response = await client.get(
         '/todos/',
         headers={'Authorization': f'Bearer {token}'},
     )
@@ -232,16 +235,14 @@ async def test_crate_todo_error_enum(session, user: User):
     )
 
     session.add(todo)
-    await session.commit()
-
-    with pytest.raises(LookupError):
-        await session.scalar(select(Todo))
+    with pytest.raises(DBAPIError):
+        await session.commit()
 
 
 @pytest.mark.asyncio
 async def test_filter_by_title_with_under_3_caracter(client, token):
     tiny_string = 'a'
-    response = client.get(
+    response = await client.get(
         f'/todos/?title={tiny_string}',
         headers={'Authorization': f'Bearer {token}'},
     )
@@ -251,7 +252,7 @@ async def test_filter_by_title_with_under_3_caracter(client, token):
 @pytest.mark.asyncio
 async def test_filter_by_title_with_22_caracter(client, token):
     long_string = 'a' * 22
-    response = client.get(
+    response = await client.get(
         f'/todos/?title={long_string}',
         headers={'Authorization': f'Bearer {token}'},
     )

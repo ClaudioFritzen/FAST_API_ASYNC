@@ -18,8 +18,8 @@ def test_read_users_without_users(client, token):
     assert response.json() == {'users': []}
 
 
-def test_read_users_with_users(client, user, token):
-    response = client.get(
+async def test_read_users_with_users(client, user, token):
+    response = await client.get(
         '/users/', headers={'Authorization': f'Bearer {token}'}
     )
     user_schema = UserPublicSchema.model_validate(user).model_dump()
@@ -29,8 +29,8 @@ def test_read_users_with_users(client, user, token):
     assert response.json() == {'users': [user_schema]}
 
 
-def test_update_user_deve_atualizar_usuario(client, user, token):
-    response = client.put(
+async def test_update_user_deve_atualizar_usuario(client, user, token):
+    response = await client.put(
         f'/users/{user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json={
@@ -48,11 +48,11 @@ def test_update_user_deve_atualizar_usuario(client, user, token):
     }
 
 
-def test_update_user_must_return_401_when_is_not_authenticated(
+async def test_update_user_must_return_401_when_is_not_authenticated(
     client,
     user,
 ):
-    response = client.put(
+    response = await client.put(
         '/users/999',
         json={
             'username': 'alice',
@@ -64,10 +64,10 @@ def test_update_user_must_return_401_when_is_not_authenticated(
     assert response.json() == {'detail': 'Not authenticated'}
 
 
-def test_update_user_must_return_403_when_try_update_another_user(
+async def test_update_user_must_return_403_when_try_update_another_user(
     client, user, token, another_user
 ):
-    response = client.put(
+    response = await client.put(
         f'/users/{another_user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json={
@@ -82,17 +82,17 @@ def test_update_user_must_return_403_when_try_update_another_user(
     }
 
 
-def test_delete_user_deve_deletar_usuario(client, user, token):
-    response = client.delete(
+async def test_delete_user_deve_deletar_usuario(client, user, token):
+    response = await client.delete(
         f'/users/{user.id}', headers={'Authorization': f'Bearer {token}'}
     )
     assert response.status_code == HTTPStatus.NO_CONTENT
 
 
-def test_delete_user_must_return_403_when_try_delete_another_user(
+async def test_delete_user_must_return_403_when_try_delete_another_user(
     client, another_user, token
 ):
-    response = client.delete(
+    response = await client.delete(
         f'/users/{another_user.id}',
         headers={'Authorization': f'Bearer {token}'},
     )
@@ -102,27 +102,33 @@ def test_delete_user_must_return_403_when_try_delete_another_user(
     }
 
 
-def test_update_user_integrity_error(client, user, token):
+async def test_update_user_integrity_error(client, user, another_user, token):
 
-    # Create another user to cause integrity error
-    # Inserindo fausto
-    client.post(
-        '/users',
+    # Tentamos atualizar o usuario 'user' para um username que já existe
+    response = await client.put(
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
         json={
-            'username': 'fausto',
+            'username': another_user.username, # já existe → deve gerar conflito
             'email': 'fausto@example.com',
             'password': 'secret',
         },
     )
 
-    # Alterando o user das fixture para fausto
-    response = client.put(
+    assert response.status_code == HTTPStatus.CONFLICT
+    assert response.json() == {
+        'detail': 'Username or email already registered'
+    }
+async def test_update_user_integrity_error_email(client, user, another_user, token):
+
+    # Tentamos atualizar o usuario 'user' para um email que já existe
+    response = await client.put(
         f'/users/{user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json={
-            'username': 'fausto',
-            'email': 'bob@example.com',
-            'password': 'mynewpassword',
+            'username': 'fausto', # já existe → deve gerar conflito
+            'email': another_user.email, # já existe → deve gerar conflito
+            'password': 'secret',
         },
     )
 
@@ -132,8 +138,10 @@ def test_update_user_integrity_error(client, user, token):
     }
 
 
-def test_create_user_integrity_error_name(client, user):
-    response = client.post(
+async def test_create_user_integrity_error_name(client, user):
+    # try a create a new user wtih name that already exists
+
+    response = await client.post(
         '/users/',
         json={
             'username': user.username,
@@ -145,8 +153,10 @@ def test_create_user_integrity_error_name(client, user):
     assert response.json() == {'detail': 'Username already registered'}
 
 
-def test_create_user_integrity_error_email(client, user):
-    response = client.post(
+async def test_create_user_integrity_error_email(client, user):
+    # try a create a new user wtih email that already exists
+    
+    response = await client.post(
         '/users/',
         json={
             'username': 'Email 2',
@@ -158,18 +168,18 @@ def test_create_user_integrity_error_email(client, user):
     assert response.json() == {'detail': 'Email already registered'}
 
 
-def test_find_user_by_id_return_user(client, user):
+async def test_find_user_by_id_return_user(client, user):
 
-    response = client.get(f'/users/{user.id}')
+    response = await client.get(f'/users/{user.id}')
 
     assert response.status_code == HTTPStatus.OK
     user_schema = UserPublicSchema.model_validate(user).model_dump()
     assert response.json() == user_schema
 
 
-def test_find_user_by_id_return_404_when_not_found(client):
+async def test_find_user_by_id_return_404_when_not_found(client):
 
-    response = client.get('/users/999')
+    response = await client.get('/users/999')
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User not found'}

@@ -4,10 +4,10 @@ from datetime import datetime
 import factory
 import pytest
 import pytest_asyncio
-from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.pool import StaticPool
+from testcontainers.postgres import PostgresContainer
 
 from fast_zero_async.app import app
 from fast_zero_async.database import get_session
@@ -16,32 +16,50 @@ from fast_zero_async.security import get_password_hash
 from fast_zero_async.settings import Settings
 
 
-@pytest.fixture
-def client(session):
+@pytest_asyncio.fixture
+async def client(session):
 
-    def get_session_override():
+    async def get_session_override():
         return session
 
-    with TestClient(app) as client:
-        app.dependency_overrides[get_session] = get_session_override
-        yield client
+    app.dependency_overrides[get_session] = get_session_override
+
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(
+        transport=transport, base_url='http://test'
+    ) as async_client:
+        yield async_client
 
     app.dependency_overrides.clear()
 
 
 @pytest_asyncio.fixture
-async def session():
-    engine = create_async_engine(
-        'sqlite+aiosqlite:///:memory:',
-        connect_args={'check_same_thread': False},
-        poolclass=StaticPool,
-    )
+async def engine():
+    with PostgresContainer('postgres:15-alpine') as postgres:
+        sync_url = postgres.get_connection_url()
+
+        async_url = sync_url.replace(
+            'postgresql+psycopg2://', 'postgresql+asyncpg://'
+        ).replace('postgresql://', 'postgresql+asyncpg://')
+
+        engine = create_async_engine(async_url)
+        yield engine
+        await engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def session(engine):
+
+    # Cria tabelas
     async with engine.begin() as conn:
         await conn.run_sync(table_registry.metadata.create_all)
 
+    # abre a sessão
     async with AsyncSession(engine, expire_on_commit=False) as session:
         yield session
 
+    # Dropa as tabelas
     async with engine.begin() as conn:
         await conn.run_sync(table_registry.metadata.drop_all)
 
@@ -94,10 +112,10 @@ async def another_user(session: AsyncSession):
     return user
 
 
-@pytest.fixture
-def token(client, user):
+@pytest_asyncio.fixture
+async def token(client, user):
 
-    response = client.post(
+    response = await client.post(
         'auth/token',
         data={
             'username': user.email,
