@@ -1,3 +1,5 @@
+import asyncio
+import sys
 from http import HTTPStatus
 
 from fastapi import FastAPI
@@ -11,6 +13,9 @@ from fast_zero_async.routers import (
 from fast_zero_async.schemas import (
     Message,
 )
+
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 app = FastAPI(title='Fast Zero Async', version='0.1.0')
 

@@ -90,18 +90,23 @@ async def update_user(
             detail='You do not have permission to update this user',
         )
 
+    db_user = await session.get(User, user_id) 
+
+    if not db_user: 
+        raise HTTPException(status_code=404, detail="User not found")
+    
     try:
-        current_user.username = user.username
-        current_user.email = user.email
-        current_user.password = get_password_hash(user.password)
+        db_user.username = user.username
+        db_user.email = user.email
+        db_user.password = get_password_hash(user.password)
 
         await session.commit()
-        await session.refresh(current_user)
+        await session.refresh(db_user)
 
-        return current_user
+        return db_user
 
     except IntegrityError:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(
             status_code=HTTPStatus.CONFLICT,
             detail='Username or email already registered',
