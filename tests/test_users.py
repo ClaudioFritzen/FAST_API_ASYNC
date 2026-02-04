@@ -1,21 +1,21 @@
 from http import HTTPStatus
 
-import pytest
-
+# import pytest
 from fast_zero_async.schemas import UserPublicSchema
+from fast_zero_async.security import get_password_hash
 
 
-@pytest.mark.xfail(
-    reason='Sempre irá falhar pois ha usuarios na base de dados'
-)
-def test_read_users_without_users(client, token):
-    response = client.get(
-        '/users/', headers={'Authorization': f'Bearer {token}'}
-    )
+async def test_create_a_new_user(client):
 
-    assert response.status_code == HTTPStatus.OK
+    password = 'Cfrg!72wX@z'
+    novo_usuario = {
+        'username': 'testseee',
+        'email': 'mail@test.com',
+        'password': get_password_hash(password),
+    }
+    response = await client.post('/users/', json=novo_usuario)
 
-    assert response.json() == {'users': []}
+    assert response.status_code == HTTPStatus.CREATED
 
 
 async def test_read_users_with_users(client, user, token):
@@ -109,7 +109,7 @@ async def test_update_user_integrity_error(client, user, another_user, token):
         f'/users/{user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json={
-            'username': another_user.username, # já existe → deve gerar conflito
+            'username': another_user.username,  # já existe deve gerar conflito
             'email': 'fausto@example.com',
             'password': 'secret',
         },
@@ -119,15 +119,19 @@ async def test_update_user_integrity_error(client, user, another_user, token):
     assert response.json() == {
         'detail': 'Username or email already registered'
     }
-async def test_update_user_integrity_error_email(client, user, another_user, token):
+
+
+async def test_update_user_integrity_error_email(
+    client, user, another_user, token
+):
 
     # Tentamos atualizar o usuario 'user' para um email que já existe
     response = await client.put(
         f'/users/{user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json={
-            'username': 'fausto', # já existe → deve gerar conflito
-            'email': another_user.email, # já existe → deve gerar conflito
+            'username': 'fausto',  # já existe → deve gerar conflito
+            'email': another_user.email,  # já existe → deve gerar conflito
             'password': 'secret',
         },
     )
@@ -155,7 +159,7 @@ async def test_create_user_integrity_error_name(client, user):
 
 async def test_create_user_integrity_error_email(client, user):
     # try a create a new user wtih email that already exists
-    
+
     response = await client.post(
         '/users/',
         json={
@@ -181,5 +185,20 @@ async def test_find_user_by_id_return_404_when_not_found(client):
 
     response = await client.get('/users/999')
 
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User not found'}
+
+
+async def test_update_user_return_404_when_not_found(client, token):
+
+    response = await client.put(
+        '/users/999',
+        headers={'Authorization': f'Bearer {token}'},
+        json={
+            'username': 'alice',
+            'email': 'alice@example.com',
+            'password': 'secret',
+        },
+    )
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User not found'}

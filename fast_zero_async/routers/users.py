@@ -84,17 +84,20 @@ async def update_user(
     session: Session,
     current_user: CurrentUser,
 ):
+    # Verify if the user existing in the database
+    db_user = await session.get(User, user_id)
+
+    if not db_user:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail='User not found'
+        )
+
     if current_user.id != user_id:
         raise HTTPException(
             status_code=HTTPStatus.FORBIDDEN,
             detail='You do not have permission to update this user',
         )
 
-    db_user = await session.get(User, user_id) 
-
-    if not db_user: 
-        raise HTTPException(status_code=404, detail="User not found")
-    
     try:
         db_user.username = user.username
         db_user.email = user.email

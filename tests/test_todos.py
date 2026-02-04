@@ -3,11 +3,11 @@ from http import HTTPStatus
 import factory
 import factory.fuzzy
 import pytest
-from sqlalchemy import select
+
+# import do erro de enum
+from sqlalchemy.exc import DBAPIError
 
 from fast_zero_async.models import Todo, TodoState, User
-## import do erro de enum
-from sqlalchemy.exc import DBAPIError
 
 
 class TodoFactory(factory.Factory):
@@ -40,7 +40,6 @@ async def test_create_todo(client, token, mock_db_time):
         'created_at': time.isoformat(),
         'updated_at': time.isoformat(),
     }
-
 
 
 async def test_list_todos_should_return_5_todos(session, client, user, token):
