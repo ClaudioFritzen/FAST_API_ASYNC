@@ -1,0 +1,23 @@
+
+
+SECRET_KEY="your secret key here"
+
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+ALGORITHM=HS256
+
+POSTGRES_USER=suasenhaaqui
+POSTGRES_PASSWORD=suasenhaaqui
+POSTGRES_DB=suasenhaaqui
+
+DATABASE_URL=suaURLdeconexaoaqui
+TEST_DATABASE_URL=suaURLdeconexaoaqui
+
+
+PGADMIN_EMAIL=suaURLdeconexaoaqui
+PGADMIN_PASSWORD=suaURLdeconexaoaqui
+
+POSTGRES_TEST_DB=fastzero_test_db
+POSTGRES_USER_TEST=fastzero_user
+POSTGRES_PASSWORD_TEST=suasenhaaqui
+
