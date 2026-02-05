@@ -6,7 +6,6 @@ from urllib.request import Request
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from fast_zero_async.config import TESTING
 from fast_zero_async.routers import (
     auth,
     todos,
@@ -35,10 +34,8 @@ async def rate_limit_middleware(request: Request, call_next):
     Middleware de rate limitin para todas as rotas
 
     """
-    print("MIDDLEWARE CHAMADO!", request.url.path)
-    if TESTING:
-        return await call_next(request)
-    
+    print('MIDDLEWARE CHAMADO!', request.url.path)
+
     user_id = request.headers.get('X-User-ID', 'anonymous')
     allowed = await limiter.allow_request(user_id)
 

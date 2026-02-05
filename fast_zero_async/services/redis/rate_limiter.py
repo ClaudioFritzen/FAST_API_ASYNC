@@ -17,7 +17,8 @@ class AsyncRateLimiter:
 
     """
 
-    def __init__(self, redis_client, max_requests: 10, window: 60):
+    def __init__(self, redis_client, max_requests: int = 10, window: int = 60):
+
         self.redis = redis_client
         self.max_requests = max_requests
         self.window = window
@@ -35,7 +36,6 @@ class AsyncRateLimiter:
         key = f'rate_limit:{user_id}'
 
         async with self.redis.pipeline() as pipe:
-            pipe = self.redis.pipeline()
             pipe.zadd(key, {now: now})
             pipe.zremrangebyscore(key, 0, now - self.window)
             pipe.zcard(key)
