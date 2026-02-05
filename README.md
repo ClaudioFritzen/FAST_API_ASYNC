@@ -47,6 +47,9 @@ Rodar testes:
 - **poetry run task cov**
 O relatório HTML será gerado em htmlcov/.
 
+### Rate Limit  
+    # link de inspiração: https://dev.to/rotirotirafa/como-limitar-e-proteger-suas-apis-com-rate-limit-2n5p
+
 🔗 Links Úteis
 Pytest warnings
 https://docs.pytest.org/en/stable/how-to/capture-warnings.html
