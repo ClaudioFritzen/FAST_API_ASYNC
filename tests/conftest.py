@@ -1,23 +1,30 @@
+# conftest.py
+import importlib
 from contextlib import contextmanager
 from datetime import datetime
 
 import factory
 import pytest
 import pytest_asyncio
+
+# --- REDIS PARA TESTES ---
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from testcontainers.postgres import PostgresContainer
 
-from fast_zero_async.app import app
 from fast_zero_async.database import get_session
 from fast_zero_async.models import User, table_registry
 from fast_zero_async.security import get_password_hash
 from fast_zero_async.settings import Settings
 
+print('📌 [conftest.py] APOS OS IMPORTS INICIANDO conftest')
+
 
 @pytest_asyncio.fixture
 async def client(session):
+    app_module = importlib.import_module('fast_zero_async.app')
+    app = app_module.app
 
     async def get_session_override():
         return session
