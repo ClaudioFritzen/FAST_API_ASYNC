@@ -21,7 +21,7 @@ async def test_create_user_adiciona_usuario_ao_database(
 
         session.add(new_user)
         await session.commit()
-        session.refresh(new_user)
+        await session.refresh(new_user)
     user = await session.scalar(select(User).where(User.username == 'johndoe'))
 
     assert asdict(user) == {
