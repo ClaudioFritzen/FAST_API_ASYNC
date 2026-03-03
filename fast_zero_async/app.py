@@ -6,6 +6,9 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
 from fast_zero_async.config import TESTING
+from fast_zero_async.middlewares.rate_limiter_middleware import (
+    rate_limit_middleware,
+)
 from fast_zero_async.routers import (
     auth,
     todos,
@@ -15,21 +18,25 @@ from fast_zero_async.schemas import (
     Message,
 )
 
+if sys.platform == 'win32' and not TESTING:
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+app = FastAPI(title='Fast Zero Async', version='0.1.0')
+
 if not TESTING:
     from fast_zero_async.services.redis.client import redis_client
     from fast_zero_async.services.redis.rate_limiter import AsyncRateLimiter
 
     print('📌 [app.py] redis_client importado =', redis_client)
 
-    limiter = AsyncRateLimiter(redis_client, 10, 60)
+    app.state.limiter = AsyncRateLimiter(redis_client, 10, 60)
 else:
     limiter = None
 
-if sys.platform == 'win32' and not TESTING:
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-app = FastAPI(title='Fast Zero Async', version='0.1.0')
 print('VALOR DE TESTING NO APP:', TESTING)
+
+# 🔥 SÓ DEPOIS REGISTRA O MIDDLEWARE
+app.middleware('http')(rate_limit_middleware)
 
 app.include_router(auth.router)
 app.include_router(users.router)
