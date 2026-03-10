@@ -21,12 +21,12 @@ jobs:
           POSTGRES_PASSWORD: test_password
         ports:
           - 5433:5432
-        options: >-
-          --health-cmd "pg_isready -U test"
-          --health-interval=5s
-          --health-timeout=5s
+        options: |
+          --health-cmd="pg_isready -U test" \
+          --health-interval=5s \
+          --health-timeout=5s \
           --health-retries=5
-        
+
       redis:
         image: redis:7-alpine
         ports:
