@@ -1,5 +1,6 @@
 # conftest.py
 import importlib
+import time
 from contextlib import contextmanager
 from datetime import datetime
 
@@ -20,12 +21,81 @@ from fast_zero_async.settings import Settings
 
 print('📌 [conftest.py] APOS OS IMPORTS INICIANDO conftest')
 
+# ---------------------------------------------------------
+# 🔥 CONTAINER POSTGRES — sobe apenas 1 vez
+# ---------------------------------------------------------
+
+
+@pytest.fixture(scope='session')
+def postgres_container():
+    with PostgresContainer('postgres:15-alpine') as postgres:
+        yield postgres
+
+
+# ---------------------------------------------------------
+# 🔥 ENGINE — criado apenas 1 vez
+# ---------------------------------------------------------
+
+
+@pytest_asyncio.fixture(scope='session')
+async def engine(postgres_container):
+    sync_url = postgres_container.get_connection_url()
+
+    async_url = sync_url.replace(
+        'postgresql+psycopg2://', 'postgresql+asyncpg://'
+    ).replace('postgresql://', 'postgresql+asyncpg://')
+
+    engine = create_async_engine(async_url)
+    yield engine
+    await engine.dispose()
+
+
+# ---------------------------------------------------------
+# 🔥 CRIA TABELAS — apenas 1 vez
+# ---------------------------------------------------------
+
+
+@pytest_asyncio.fixture(scope='session')
+async def setup_database(engine):
+    async with engine.begin() as conn:
+        await conn.run_sync(table_registry.metadata.create_all)
+
+    yield
+
+    async with engine.begin() as conn:
+        await conn.run_sync(table_registry.metadata.drop_all)
+
+
+# ---------------------------------------------------------
+# 🔥 SESSION — rápida, por teste
+# ---------------------------------------------------------
+
+
+@pytest_asyncio.fixture
+async def session(engine, setup_database):
+    async with AsyncSession(engine, expire_on_commit=False) as session:
+        yield session
+
+
+# ---------------------------------------------------------
+# 🔥 CLIENT — criado 1 vez por módulo
+# ---------------------------------------------------------
+
 
 @pytest_asyncio.fixture
 async def client(session):
     app_module = importlib.import_module('fast_zero_async.app')
     app = app_module.app
 
+    # Mock do rate limiter
+    class FakeLimiter:
+        @staticmethod
+        async def allow_request(user_id):
+            return True
+
+    app.state.limiter = FakeLimiter()
+
+    # Override da sessão do banco
     async def get_session_override():
         return session
 
@@ -39,36 +109,6 @@ async def client(session):
         yield async_client
 
     app.dependency_overrides.clear()
-
-
-@pytest_asyncio.fixture
-async def engine():
-    with PostgresContainer('postgres:15-alpine') as postgres:
-        sync_url = postgres.get_connection_url()
-
-        async_url = sync_url.replace(
-            'postgresql+psycopg2://', 'postgresql+asyncpg://'
-        ).replace('postgresql://', 'postgresql+asyncpg://')
-
-        engine = create_async_engine(async_url)
-        yield engine
-        await engine.dispose()
-
-
-@pytest_asyncio.fixture
-async def session(engine):
-
-    # Cria tabelas
-    async with engine.begin() as conn:
-        await conn.run_sync(table_registry.metadata.create_all)
-
-    # abre a sessão
-    async with AsyncSession(engine, expire_on_commit=False) as session:
-        yield session
-
-    # Dropa as tabelas
-    async with engine.begin() as conn:
-        await conn.run_sync(table_registry.metadata.drop_all)
 
 
 @contextmanager
@@ -144,3 +184,35 @@ class UserFactory(factory.Factory):
     username = factory.Sequence(lambda n: f'test{n}')
     email = factory.LazyAttribute(lambda obj: f'{obj.username}@test.com')
     password = factory.LazyAttribute(lambda obj: f'{obj.username}@password')
+
+
+# Rastreabilidade:
+@pytest.fixture
+def measure_test_time(request):
+    start = time.perf_counter()
+    yield
+    duration = time.perf_counter() - start
+    print(f'⏱️ TEMPO: Teste ->: {request.node.name} ->: {duration:.4f} s')
+
+
+# Rastreabilidade para fixtures
+@pytest.fixture(autouse=True)
+def trace_fixtures(request):
+    start = time.perf_counter()
+    yield
+    duration = time.perf_counter() - start
+    if request.scope != 'session':
+        print(
+            f'⏱️ FIXTURE {request.fixturename}'
+            f'({request.scope}) → {duration:.3f}s'
+        )
+
+
+# ---------------------------------------------------------
+# 🔥 Limpar o db antes de cada tests
+# ---------------------------------------------------------
+@pytest_asyncio.fixture(autouse=True)
+async def clean_database(session):
+    for table in reversed(table_registry.metadata.sorted_tables):
+        await session.execute(table.delete())
+    await session.commit()
