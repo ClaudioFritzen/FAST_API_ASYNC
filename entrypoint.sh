@@ -1,5 +1,8 @@
-#!/bin/bash
+#!/bin/sh
+set -e
 
+echo "Running migrations..."
 poetry run alembic upgrade head
 
-poetry run uvicorn --host 0.0.0.0 --port 8000 fast_zero_async.main:app
+echo "Starting API..."
+poetry run uvicorn fast_zero_async.app:app --host 0.0.0.0 --port 8000
