@@ -18,10 +18,13 @@ from fast_zero_async.schemas import (
     Message,
 )
 
+from fast_zero_async.middlewares.cors import setup_cors
+
 if sys.platform == 'win32' and not TESTING:
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 app = FastAPI(title='Fast Zero Async', version='0.1.0')
+setup_cors(app)
 
 if not TESTING:
     from fast_zero_async.services.redis.client import redis_client
