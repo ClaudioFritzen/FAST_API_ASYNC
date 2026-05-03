@@ -8,13 +8,16 @@ import asyncio
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 
-from fast_zero_async.settings import Settings
+from fast_zero_async.settings import settings # importa a instância única
 from fast_zero_async.models import table_registry
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option('sqlalchemy.url', Settings().DATABASE_URL)
+
+
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
