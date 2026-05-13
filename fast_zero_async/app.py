@@ -4,6 +4,7 @@ from http import HTTPStatus
 
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from fast_zero_async.config import TESTING
 from fast_zero_async.middlewares.cors import setup_cors
@@ -24,6 +25,14 @@ if sys.platform == 'win32' and not TESTING:
 
 app = FastAPI(title='Fast Zero Async', version='0.1.0')
 setup_cors(app)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],  # Liberando qualquer origem (localhost/127.0.0.1)
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
 
 if not TESTING:
     from fast_zero_async.services.redis.client import redis_client
