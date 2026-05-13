@@ -2,14 +2,20 @@ name: CI - FastAPI Async
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "reconstruir-backend"]
   
   pull_request:
-    branches: ["main"]
+    branches: ["main", "reconstruir-backend"]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    # pegando nossas env vars do secrets do github
+    env:
+      TESTING: "1"
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      REDIS_HOST: ${{ secrets.REDIS_HOST }}
 
     services:
       postgres:
