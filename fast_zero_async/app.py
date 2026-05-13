@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
 from fast_zero_async.config import TESTING
+from fast_zero_async.middlewares.cors import setup_cors
 from fast_zero_async.middlewares.rate_limiter_middleware import (
     rate_limit_middleware,
 )
@@ -17,8 +18,6 @@ from fast_zero_async.routers import (
 from fast_zero_async.schemas import (
     Message,
 )
-
-from fast_zero_async.middlewares.cors import setup_cors
 
 if sys.platform == 'win32' and not TESTING:
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
