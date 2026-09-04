@@ -13,12 +13,26 @@ async def rate_limit_middleware(request: Request, call_next):
 
     """
     limiter = request.app.state.limiter
-    print('🔥 MIDDLEWARE CHAMADO:', request.url.path)
-    print('🔥 TESTING =', TESTING)
-    print('🔥 limmiter =', limiter)
 
     # Inicio do rastreamento
     start = time.perf_counter()
+
+    # EXCLUIR ROTAS QUE NÃO DEVEM SER LIMITADAS
+    EXCLUDED_PATHS = {'/metrics'}
+
+    # Ignorar rotas que não devem ser limitadas
+    if request.url.path in EXCLUDED_PATHS:
+        response = await call_next(request)
+        duration = time.perf_counter() - start
+        print(f'⏱️ TEMPO: {request.url.path} -> {duration:.4f}s')
+        return response
+
+    # Identificar o usuário pelo IP real
+    user_id = request.client.host
+
+    print('🔥 MIDDLEWARE CHAMADO:', request.url.path)
+    print('🔥 TESTING =', TESTING)
+    print('🔥 limmiter =', limiter)
 
     if TESTING or limiter is None:
         print('🔥 TESTING=True → ignorando rate limit')
