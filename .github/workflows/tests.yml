@@ -11,14 +11,15 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    env:
+    # 04/09/2026 para esse CI não é necessário, isso apenas cria uma img e roda os tests, e os dados ja são fornecidos
+    #env:
       #TESTING: 1
-      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      POSTGRES_PROD_DB: ${{ secrets.POSTGRES_PROD_DB }}
-      POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
-      POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-      REDIS_HOST: ${{ secrets.REDIS_HOST }}
+      #POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      #POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      #POSTGRES_PROD_DB: ${{ secrets.POSTGRES_PROD_DB }}
+      #POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+      #POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+      #REDIS_HOST: ${{ secrets.REDIS_HOST }}
 
 
     services:
