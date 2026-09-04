@@ -12,8 +12,8 @@ jobs:
     runs-on: ubuntu-latest
 
     # 04/09/2026 para esse CI não é necessário, isso apenas cria uma img e roda os tests, e os dados ja são fornecidos
-    #env:
-      #TESTING: 1
+    env:
+      TESTING: 1
       #POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
       #POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       #POSTGRES_PROD_DB: ${{ secrets.POSTGRES_PROD_DB }}
