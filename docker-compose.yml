@@ -1,5 +1,5 @@
 services:
-  api:
+  api_fastapi2026:
     build: .
 
     ports:
@@ -68,9 +68,35 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+  
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+    
+    volumes:
+      - grafana-storage:/var/lib/grafana
+  
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+    depends_on:
+      - api_fastapi2026
 
 volumes:
   postgres_prod_data:
   postgres_test_data:
   pgadmin_data:
   redis_data:
+  grafana-storage:
