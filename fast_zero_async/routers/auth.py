@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from fast_zero_async.database import get_session
 from fast_zero_async.models import User
-from fast_zero_async.schemas import TokenSchema, LoginSchema
+from fast_zero_async.schemas import LoginSchema, TokenSchema
 from fast_zero_async.security import (
     create_access_token,
     get_current_user,
@@ -57,14 +57,10 @@ async def refresh_access_token(
 
 
 @router.post('/login', status_code=HTTPStatus.OK)
-async def login(
-    user: LoginSchema,
-    session: Session
-):
+async def login(user: LoginSchema, session: Session):
     # Implement login logic here
     user_db = await session.scalar(
         select(User).where(User.email == user.email)
-
     )
 
     if not user_db:
@@ -83,11 +79,11 @@ async def login(
     ascess_token = create_access_token(data={'sub': user.email})
 
     return {
-        "message": f"User {user.email} logged in successfully",
-        "access_token": ascess_token,
-        "token_type": "bearer"
+        'message': f'User {user.email} logged in successfully',
+        'access_token': ascess_token,
+        'token_type': 'bearer',
     }
-    
+
 
 @router.post('/logout', status_code=HTTPStatus.OK)
 async def logout(

@@ -14,9 +14,11 @@ class UserSchema(BaseModel):
     email: EmailStr
     password: str
 
+
 class LoginSchema(BaseModel):
     email: EmailStr
     password: str
+
 
 class UserPublicSchema(BaseModel):
     username: str

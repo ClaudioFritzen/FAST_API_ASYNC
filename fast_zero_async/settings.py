@@ -1,5 +1,6 @@
-from functools import lru_cache
 import os
+from functools import lru_cache
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,12 +13,12 @@ class Settings(BaseSettings):
 
     POSTGRES_USER: str | None = None
     POSTGRES_PASSWORD: str | None = None
-    POSTGRES_PROD_DB: str   | None = None
+    POSTGRES_PROD_DB: str | None = None
     POSTGRES_HOST: str = 'db_prod'
     POSTGRES_PORT: int = 5432
 
     SECRET_KEY: str | None = None
-    ALGORITHM: str  | None = None
+    ALGORITHM: str | None = None
     ACCESS_TOKEN_EXPIRE_MINUTES: int | None = None
 
     @property
