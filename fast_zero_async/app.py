@@ -3,8 +3,9 @@ import sys
 from http import HTTPStatus
 
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from fast_zero_async.config import TESTING
 from fast_zero_async.middlewares.rate_limiter_middleware import (
@@ -22,7 +23,17 @@ from fast_zero_async.schemas import (
 if sys.platform == 'win32' and not TESTING:
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-app = FastAPI(title='Fast Zero Async', version='0.1.0')
+""" @asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    yield
+ """
+
+app = FastAPI(title='Fast Zero Async', version='0.1.0')  # lifespan=lifespan)
+
+Instrumentator(should_instrument_requests_inprogress=False).instrument(
+    app
+).expose(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -31,14 +42,13 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
-
 if not TESTING:
     from fast_zero_async.services.redis.client import redis_client
     from fast_zero_async.services.redis.rate_limiter import AsyncRateLimiter
 
     print('📌 [app.py] redis_client importado =', redis_client)
 
-    app.state.limiter = AsyncRateLimiter(redis_client, 10, 60)
+    app.state.limiter = AsyncRateLimiter(redis_client, 50, 90)
 else:
     limiter = None
 
