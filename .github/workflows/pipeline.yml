@@ -1,0 +1,113 @@
+name: CI - FastAPI Async
+
+on:
+  push:
+    branches: ["main"]
+
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      TESTING: 1
+      CI: true
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+
+        ports:
+          - 5433:5432
+
+        options: >-
+          --health-cmd="pg_isready -U test_user -d test_db"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+      redis:
+        image: redis:7-alpine
+
+        ports:
+          - 6379:6379
+
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Poetry
+        run: pip install poetry
+
+      - name: Configurar Poetry
+        run: poetry config virtualenvs.create false
+
+      - name: Instalar dependências
+        run: poetry install --no-interaction --no-root
+
+      - name: Lint (Ruff)
+        run: poetry run ruff check .
+
+      - name: Formatação (Ruff)
+        run: poetry run ruff format --check .
+
+      - name: Definir ambiente
+        run: |
+          echo "TESTING=1" >> $GITHUB_ENV
+          echo "CI=true" >> $GITHUB_ENV
+          echo "DATABASE_URL=postgresql+asyncpg://test_user:test_password@localhost:5433/test_db" >> $GITHUB_ENV
+          echo "REDIS_HOST=localhost" >> $GITHUB_ENV
+
+      - name: Debug variáveis
+        run: |
+          echo "DATABASE_URL=$DATABASE_URL"
+          echo "REDIS_HOST=$REDIS_HOST"
+
+      - name: Instalar cliente postgres
+        run: |
+          apt-get update
+          apt-get install -y postgresql-client
+
+      - name: Testar conexão postgres
+        run: |
+          pg_isready -h localhost -p 5433 -U test_user -d test_db
+
+      - name: Testar login postgres
+        run: |
+          PGPASSWORD=test_password psql \
+          -h localhost \
+          -p 5433 \
+          -U test_user \
+          -d test_db \
+          -c "SELECT 1;"
+
+      - name: Executar 1 teste
+        run: |
+          pytest tests/test_app.py::test_root_deve_retornar_ola_mundo -v -s
+
+      - name: Executar testes
+        run: |
+          pytest --cov=fast_zero_async --cov-report=xml -v
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

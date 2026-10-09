@@ -1,0 +1,49 @@
+name: CI Debug
+
+on:
+  push:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+
+        ports:
+          - 5433:5432
+
+      redis:
+        image: redis:7-alpine
+
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - run: pip install poetry
+
+      - run: poetry config virtualenvs.create false
+
+      - run: poetry install --no-interaction --no-root
+
+      - name: Mostrar variáveis
+        run: |
+          echo "CI=true" >> $GITHUB_ENV
+          echo "TESTING=1" >> $GITHUB_ENV
+          echo "DATABASE_URL=postgresql+asyncpg://test_user:test_password@localhost:5433/test_db" >> $GITHUB_ENV
+
+      - name: Rodar apenas um teste
+        run: |
+          pytest tests/test_app.py::test_root_deve_retornar_ola_mundo -v -s
