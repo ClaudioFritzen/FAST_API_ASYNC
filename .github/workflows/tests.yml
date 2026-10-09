@@ -1,9 +1,9 @@
-name: CI - FastAPI Async 
+name: CI - FastAPI Async
 
 on:
   push:
     branches: ["main"]
-  
+
   pull_request:
     branches: ["main"]
 
@@ -11,16 +11,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    # 04/09/2026 para esse CI não é necessário, isso apenas cria uma img e roda os tests, e os dados ja são fornecidos
     env:
       TESTING: 1
-      #POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-      #POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-      #POSTGRES_PROD_DB: ${{ secrets.POSTGRES_PROD_DB }}
-      #POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
-      #POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-      #REDIS_HOST: ${{ secrets.REDIS_HOST }}
-
+      CI: true
 
     services:
       postgres:
@@ -33,7 +26,10 @@ jobs:
         ports:
           - 5433:5432
         options: >-
-          --health-cmd="pg_isready -U test_user" --health-interval=5s --health-timeout=5s --health-retries=5
+          --health-cmd="pg_isready -U test_user" -d test_db
+          --health-interval=5s 
+          --health-timeout=5s 
+          --health-retries=20
 
       redis:
         image: redis:7-alpine
@@ -43,8 +39,8 @@ jobs:
           --health-cmd "redis-cli ping"
           --health-interval=5s
           --health-timeout=5s
-          --health-retries=5
-    
+          --health-retries=20
+
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
@@ -53,16 +49,24 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.12"
-      
+
       - name: Instalar Poetry
         run: pip install poetry
-      
+
       - name: Configurar Poetry para não criar venv
         run: poetry config virtualenvs.create false
-      
+
       - name: Instalar dependências
         run: poetry install --no-interaction --no-root
-      
+      - name: Lint (ruff)
+        run: poetry run ruff check . --exit-zero
+
+      - name: Lint (ruff) com auto-correção
+        run: poetry run ruff check . --fix
+
+      - name: Formatação (Ruff)
+        run: poetry run ruff format -- check .
+
       - name: Definir variáveis de ambiente para testes
         run: |
           echo "TESTING=1" >> $GITHUB_ENV
@@ -71,7 +75,7 @@ jobs:
 
       - name: Executar testes
         run: pytest --cov=fast_zero_async --cov-report=xml
-      
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
 

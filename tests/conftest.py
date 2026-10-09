@@ -1,5 +1,6 @@
 # conftest.py
 import importlib
+import os
 import time
 from contextlib import contextmanager
 from datetime import datetime
@@ -21,32 +22,57 @@ from fast_zero_async.settings import Settings
 
 print('📌 [conftest.py] APOS OS IMPORTS INICIANDO conftest')
 
-# ---------------------------------------------------------
-# 🔥 CONTAINER POSTGRES — sobe apenas 1 vez
-# ---------------------------------------------------------
-
 
 @pytest.fixture(scope='session')
 def postgres_container():
+
+    print('CI=', os.getenv('CI'))
+
+    if os.getenv('CI') == 'true':
+        print('Rodando no CI - ignorando PostgresContainer')
+        yield None
+        return
+
     with PostgresContainer('postgres:15-alpine') as postgres:
         yield postgres
 
 
 # ---------------------------------------------------------
-# 🔥 ENGINE — criado apenas 1 vez
+# 🔥 ENGINE —criado para tentar passar o CI/CD no ACT
 # ---------------------------------------------------------
 
 
 @pytest_asyncio.fixture(scope='session')
 async def engine(postgres_container):
-    sync_url = postgres_container.get_connection_url()
+    print('🔍 CI =', os.getenv('CI'))
+    print('🔍 TESTING =', os.getenv('TESTING'))
+    print('🔍 DATABASE_URL =', os.getenv('DATABASE_URL'))
 
-    async_url = sync_url.replace(
-        'postgresql+psycopg2://', 'postgresql+asyncpg://'
-    ).replace('postgresql://', 'postgresql+asyncpg://')
+    if os.getenv('CI') == 'true':
+        async_url = os.getenv('DATABASE_URL')
+        print('🧪 USANDO DATABASE_URL DO CI')
+        print('🧪 async_url =', async_url)
 
+        if not async_url:
+            raise RuntimeError('DATABASE_URL não definida no CI')
+
+    else:
+        print('🐳 USANDO TESTCONTAINERS')
+        sync_url = postgres_container.get_connection_url()
+
+        async_url = sync_url.replace(
+            'postgresql+psycopg2://',
+            'postgresql+asyncpg://',
+        ).replace(
+            'postgresql://',
+            'postgresql+asyncpg://',
+        )
+        print('🔍 async_url =', async_url)
+    print('🚀 SQLALCHEMY URL =', async_url)
     engine = create_async_engine(async_url)
+
     yield engine
+
     await engine.dispose()
 
 
