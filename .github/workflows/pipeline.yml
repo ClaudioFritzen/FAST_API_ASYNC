@@ -75,11 +75,16 @@ jobs:
           echo "CI=true" >> $GITHUB_ENV
           echo "DATABASE_URL=postgresql+asyncpg://test_user:test_password@localhost:5433/test_db" >> $GITHUB_ENV
           echo "REDIS_HOST=localhost" >> $GITHUB_ENV
+          echo "SECRET_KEY=test-secret-key" >> $GITHUB_ENV
+          echo "ACCESS_TOKEN_EXPIRE_MINUTES=30" >> $GITHUB_ENV
+          echo "ALGORITHM=HS256" >> $GITHUB_ENV
 
       - name: Debug variáveis
         run: |
           echo "DATABASE_URL=$DATABASE_URL"
           echo "REDIS_HOST=$REDIS_HOST"
+          echo "ACCESS_TOKEN_EXPIRE_MINUTES=$ACCESS_TOKEN_EXPIRE_MINUTES"
+          echo "ALGORITHM=$ALGORITHM"
 
       - name: Instalar cliente postgres
         run: |
