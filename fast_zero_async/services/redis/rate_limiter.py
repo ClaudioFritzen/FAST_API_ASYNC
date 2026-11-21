@@ -17,7 +17,7 @@ class AsyncRateLimiter:
 
     """
 
-    def __init__(self, redis_client, max_requests: int = 10, window: int = 60):
+    def __init__(self, redis_client, max_requests: int = 50, window: int = 90):
 
         self.redis = redis_client
         self.max_requests = max_requests
